@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Just Vidio: the work done, reel progress, movie updates and videos.">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Just Vidio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: dark-first cinema screening room, now in motion. Hero with projector screen, ticker band, work log, moving film strip, update timeline, video shelf. */
+:root {
+  --bg: #12141a;
+  --surface: #1b1e27;
+  --surface-2: #232733;
+  --line: #2f3442;
+  --fg: #ece8e1;
+  --muted: #9ba0ad;
+  --accent: #e9b44c;
+  --shine: #fff3cf;
+  --accent-ink: #1a1405;
+  --good: #7cc5a0;
+  --font-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f2ee; --surface: #ffffff; --surface-2: #ebe8e1; --line: #d8d4ca;
+    --fg: #1a1c22; --muted: #5f6470; --accent: #b3720a; --shine: #e8a93f; --accent-ink: #ffffff; --good: #2f7d5a;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f2ee; --surface: #ffffff; --surface-2: #ebe8e1; --line: #d8d4ca;
+  --fg: #1a1c22; --muted: #5f6470; --accent: #b3720a; --shine: #e8a93f; --accent-ink: #ffffff; --good: #2f7d5a;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-inline: 16px; padding-block: 0 56px;
+}
+.wrap { max-width: 1080px; margin-inline: auto; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); text-transform: uppercase; line-height: .95; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+.mono { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Keyframes */
+@keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes shine { to { background-position: -200% 0; } }
+@keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(-70px, 50px) scale(1.15); } }
+@keyframes pan { from { background-position: 15% 10%, 0 0; } to { background-position: 85% 70%, 0 0; } }
+@keyframes blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: .15; } }
+@keyframes grain { 0% { background-position: 0 0; } 20% { background-position: -40px 25px; } 40% { background-position: 30px -35px; } 60% { background-position: -25px -10px; } 80% { background-position: 45px 30px; } 100% { background-position: 0 0; } }
+@keyframes flick { 0%, 100% { opacity: 0; } 8% { opacity: .07; } 9% { opacity: 0; } 41% { opacity: .05; } 42% { opacity: 0; } 73% { opacity: .09; } 75% { opacity: .02; } 76% { opacity: 0; } }
+@keyframes clap { 0%, 80% { transform: rotate(-24deg); } 86%, 100% { transform: rotate(0deg); } }
+@keyframes tick { to { transform: translateX(-50%); } }
+@keyframes perf { to { background-position: 28px 0; } }
+@keyframes sweep { 0% { transform: translateX(-110%); } 45%, 100% { transform: translateX(110%); } }
+@keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes growY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+
+.progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .progress { display: block; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; height: 3px; background: var(--accent); transform-origin: left; transform: scaleX(0); animation: growX linear both; animation-timeline: scroll(root); z-index: 20; pointer-events: none; }
+}
+
+.sample { background: var(--surface-2); border-bottom: 1px solid var(--line); margin-inline: -16px; padding: 8px 16px; text-align: center; }
+
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 900; font-size: 28px; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; }
+.brand b { color: var(--accent); font-weight: 900; }
+nav { display: flex; gap: 22px; flex-wrap: wrap; }
+nav a { position: relative; text-decoration: none; color: var(--muted); font-size: 14px; transition: color .2s; }
+nav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; }
+nav a:hover, nav a:focus-visible { color: var(--fg); }
+nav a:hover::after, nav a:focus-visible::after { transform: scaleX(1); }
+a:focus-visible, button:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.hero { position: relative; isolation: isolate; overflow: clip; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center; padding-block: 28px 56px; }
+.hero::before { content: ""; position: absolute; z-index: -1; width: 640px; height: 640px; right: -140px; top: -120px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent) 0%, transparent 65%); animation: drift 12s ease-in-out infinite alternate; }
+.rise { animation: rise .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
+.hero h1 { font-size: clamp(48px, 8vw, 92px); font-weight: 900; }
+.hero h1 em { font-style: normal; color: var(--accent);
+  background: linear-gradient(100deg, var(--accent) 25%, var(--shine) 45%, var(--accent) 65%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shine 4.5s linear infinite; }
+.hero p.lead { color: var(--muted); max-width: 44ch; margin: 20px 0 24px; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 4px; font: 600 14px var(--font-body); text-decoration: none; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.btn:hover { transform: translateY(-3px); border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+.screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: #07080b; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: grid; place-items: center; animation: zoomIn 1s cubic-bezier(.2, .7, .2, 1) both; animation-delay: .25s; }
+.screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 3; }
+.screen .poster { position: absolute; inset: 0; background-size: 150% 150%, 100% 100%; background:
+  radial-gradient(120% 90% at 70% 20%, rgba(233,180,76,.34), transparent 55%),
+  linear-gradient(160deg, #1c2233 0%, #0b0c10 70%);
+  background-size: 150% 150%, 100% 100%; animation: pan 14s ease-in-out infinite alternate; }
+.screen .grain { position: absolute; inset: -60px; pointer-events: none; opacity: .22; mix-blend-mode: overlay; animation: grain .6s steps(1) infinite;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.screen .flicker { position: absolute; inset: 0; background: #fff; mix-blend-mode: soft-light; opacity: 0; pointer-events: none; animation: flick 5.5s steps(1) infinite; }
+.screen .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%); }
+.screen .tc { position: absolute; left: 14px; bottom: 12px; color: #d9d6cf; font: 500 12px var(--font-mono); letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+.screen .rec { position: absolute; right: 14px; top: 12px; color: #d9d6cf; font: 500 12px var(--font-mono); letter-spacing: .1em; display: flex; align-items: center; gap: 6px; }
+.screen .rec i { width: 8px; height: 8px; border-radius: 50%; background: #e5534b; display: inline-block; animation: blink 1.2s steps(1) infinite; }
+.screen .slate { position: relative; text-align: center; color: #f1ede4; padding: 0 16px; }
+.screen .slate h2 { font-size: clamp(28px, 5vw, 52px); font-weight: 900; }
+.screen .slate span.sub { display: block; margin-top: 8px; font: 400 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: #b9b5ab; }
+.screen.playing > :not(video) { display: none; }
+.clapper { width: 124px; margin: 0 auto 14px; }
+.clapper .arm { height: 15px; margin-bottom: 2px; border-radius: 2px 2px 0 0; background: repeating-linear-gradient(115deg, #f1ede4 0 14px, #15161a 14px 28px); transform-origin: left bottom; animation: clap 7s ease-in infinite; }
+.clapper .board { display: flex; justify-content: space-between; padding: 6px 8px; background: #15161a; border: 1px solid #3a3d48; border-radius: 0 0 3px 3px; font: 500 10px var(--font-mono); letter-spacing: .08em; color: #d9d6cf; }
+.pick { display: block; margin-top: 10px; }
+.pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.pick span { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Ticker band */
+.ticker { overflow: hidden; border-block: 1px solid var(--line); padding-block: 12px; margin-top: 8px; }
+.ticker .track { display: flex; width: max-content; animation: tick 28s linear infinite; }
+.ticker .set { display: flex; gap: 36px; padding-right: 36px; }
+.ticker span { font-family: var(--font-display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; color: var(--muted); display: flex; align-items: center; gap: 36px; }
+.ticker span::after { content: ""; width: 9px; height: 9px; background: var(--accent); transform: rotate(45deg); flex: none; }
+
+section { padding-block: 56px 0; scroll-margin-top: 16px; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+.sec-head h2 { font-size: clamp(32px, 5vw, 48px); font-weight: 800; }
+
+/* Work log */
+.work { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 40px; }
+.big { border-top: 3px solid var(--accent); padding-top: 14px; }
+.big .num { font-family: var(--font-display); font-weight: 900; font-size: clamp(72px, 12vw, 128px); line-height: .9; font-variant-numeric: tabular-nums; }
+.big .num small { font-size: .4em; color: var(--muted); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; margin: 24px 0 0; padding: 0; list-style: none; }
+.facts b { display: block; font-family: var(--font-display); font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.facts span { color: var(--muted); font-size: 13px; }
+
+.bars { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; }
+.bars .name { font-weight: 600; }
+.bars .pct { font: 500 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+.bars .track { grid-column: 1 / -1; height: 10px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.bars .fill { display: block; height: 100%; background: var(--accent); transform-origin: left; }
+.bars li.done .fill { background: var(--good); }
+.bars .note { grid-column: 1 / -1; color: var(--muted); font-size: 13px; margin-top: -2px; }
+
+/* Reel strip */
+.strip { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 18px; }
+.perf { height: 10px; margin-block: 0 12px; background: repeating-linear-gradient(90deg, var(--bg) 0 14px, transparent 14px 28px); background-size: 28px 100%; border-radius: 2px; animation: perf 1.6s linear infinite; }
+.perf.b { margin-block: 12px 0; animation-direction: reverse; }
+.frames { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.frame { background: var(--surface-2); border-radius: 3px; padding: 10px; display: grid; gap: 8px; transition: transform .25s; }
+.frame:hover { transform: translateY(-4px); }
+.frame .mono { color: var(--fg); }
+.frame .meter { height: 56px; background: var(--bg); border-radius: 2px; display: flex; align-items: flex-end; overflow: hidden; }
+.frame .meter i { display: block; width: 100%; background: var(--accent); transform-origin: bottom; }
+.frame small { color: var(--muted); font-size: 12px; }
+
+/* Timeline */
+.log { list-style: none; margin: 0; padding: 0; display: grid; }
+.log li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 28px; padding-block: 22px; border-top: 1px solid var(--line); }
+.log li:last-child { border-bottom: 1px solid var(--line); }
+.log .when { font: 500 13px var(--font-mono); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.log h3 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+.log p { margin: 0; color: var(--muted); max-width: 62ch; }
+.tag { display: inline-block; font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); border-radius: 2px; margin-bottom: 8px; }
+.tag.next { border-color: var(--line); color: var(--muted); }
+
+/* Video shelf */
+.shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 20px; }
+.card { display: grid; gap: 10px; align-content: start; }
+.thumb { position: relative; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; display: grid; place-items: center; background-size: 200% 200%; animation: pan2 9s ease-in-out infinite alternate; transition: transform .3s cubic-bezier(.2, .7, .2, 1), box-shadow .3s; }
+@keyframes pan2 { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+.thumb::before { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.14) 50%, transparent 60%); transform: translateX(-110%); animation: sweep 6s ease-in-out infinite; animation-delay: var(--sd, 0s); }
+.thumb .play { position: relative; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.55); display: grid; place-items: center; transition: transform .25s, background .25s; }
+.thumb .play::after { content: ""; border-left: 14px solid #fff; border-block: 8px solid transparent; margin-left: 4px; transition: border-color .25s; }
+.thumb .dur { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.7); color: #fff; font: 500 11px var(--font-mono); padding: 2px 6px; border-radius: 2px; }
+.card:hover .thumb { transform: translateY(-5px); box-shadow: 0 14px 30px rgba(0,0,0,.35); }
+.card:hover .play { transform: scale(1.18); background: var(--accent); }
+.card:hover .play::after { border-left-color: var(--accent-ink); }
+.t1 { background-image: linear-gradient(135deg, #4a3315, #0e0d10 60%, #3b2a14); }
+.t2 { background-image: linear-gradient(135deg, #20395a, #0b0e14 60%, #1b2d44); }
+.t3 { background-image: linear-gradient(135deg, #4a2536, #100b0e 60%, #3a1f2b); }
+.t4 { background-image: linear-gradient(135deg, #1f4a43, #0a1010 60%, #1c3a35); }
+.t5 { background-image: linear-gradient(135deg, #433e1e, #0f0e08 60%, #34301a); }
+.t6 { background-image: linear-gradient(135deg, #382d5a, #0c0b12 60%, #2b2442); }
+.card:nth-child(2) .thumb::before { --sd: .8s; } .card:nth-child(3) .thumb::before { --sd: 1.6s; }
+.card:nth-child(4) .thumb::before { --sd: 2.4s; } .card:nth-child(5) .thumb::before { --sd: 3.2s; } .card:nth-child(6) .thumb::before { --sd: 4s; }
+.card h3 { font-size: 22px; font-weight: 800; }
+.card .mono { font-size: 11px; }
+
+footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* Opening intro: a lamp swings in the dark and lights the title */
+html.intro, html.intro body { overflow: hidden; }
+.intro .rise, .intro .screen { animation-play-state: paused; }
+#intro { position: fixed; inset: 0; z-index: 100; background: #0b0c11; transition: opacity .8s ease, transform .8s ease; animation: introGone .6s ease 9s forwards; }
+#intro.out { opacity: 0; transform: scale(1.03); pointer-events: none; }
+#introCanvas { display: block; width: 100%; height: 100%; }
+#introSkip { position: absolute; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; font: 500 12px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: #cfcabd; background: transparent; border: 1px solid rgba(255,255,255,.28); border-radius: 3px; cursor: pointer; transition: border-color .2s, color .2s; }
+#introSkip:hover { border-color: #e9b44c; color: #fff; }
+@keyframes introGone { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) { #intro { display: none; } }
+
+/* Scroll-driven reveals. Resting state is the finished state, so nothing stays hidden if unsupported. */
+@supports (animation-timeline: view()) {
+  .bars .fill { animation: growX linear forwards; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+  .frames .meter i { animation: growY linear forwards; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+  .log li { animation: slideIn linear forwards; animation-timeline: view(); animation-range: entry 0% entry 90%; }
+  .card { animation: riseIn linear forwards; animation-timeline: view(); animation-range: entry 0% entry 90%; }
+}
+
+@media (max-width: 860px) {
+  .hero, .work { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .frames { grid-template-columns: repeat(5, minmax(88px, 1fr)); overflow-x: auto; padding-bottom: 6px; }
+}
+@media (max-width: 560px) {
+  .shelf { grid-template-columns: minmax(0, 1fr); }
+  .log li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+</head>
+<body>
+<div id="intro"><canvas id="introCanvas" aria-hidden="true"></canvas><button id="introSkip" type="button">Skip</button></div>
+<div class="progress" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="sample mono">Sample content. Replace the movie name, numbers and videos with your real ones.</div>
+
+  <header class="top">
+    <a class="brand" href="#top">Just <b>Vidio</b></a>
+    <nav aria-label="Sections">
+      <a href="#kaam">Work</a>
+      <a href="#reels">Reels</a>
+      <a href="#updates">Updates</a>
+      <a href="#videos">Videos</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div>
+        <p class="mono rise" style="--d:.05s">Reel 3 of 5 &middot; Editing in progress</p>
+        <h1 class="rise" style="--d:.15s">See the work, <em>follow the movie.</em></h1>
+        <p class="lead rise" style="--d:.3s">Every update, every video and all the work done so far, in one place. From the first shoot to the final cut.</p>
+        <div class="cta-row rise" style="--d:.45s">
+          <a class="btn primary" href="#updates">Latest update</a>
+          <a class="btn" href="#videos">Watch videos</a>
+        </div>
+      </div>
+      <div>
+        <div class="screen" id="screen">
+          <div class="poster"></div>
+          <div class="grain"></div>
+          <div class="flicker"></div>
+          <div class="vignette"></div>
+          <div class="rec mono"><i></i> Rough cut</div>
+          <div class="slate">
+            <div class="clapper" aria-hidden="true"><div class="arm"></div><div class="board"><span>SCENE 12</span><span>TAKE 3</span></div></div>
+            <h2>Movie Title</h2>
+            <span class="sub">Trailer goes here</span>
+          </div>
+          <div class="tc" id="tc">00:00:00:00</div>
+          <video id="player" controls hidden playsinline></video>
+        </div>
+        <label class="pick mono"><input id="file" type="file" accept="video/*"><span>Play a video from your device</span></label>
+      </div>
+    </div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="track">
+        <div class="set"><span>Reel 3 editing in progress</span><span>126 scenes shot</span><span>Teaser is out</span><span>Sound design started</span><span>Next: fine cut</span></div>
+        <div class="set"><span>Reel 3 editing in progress</span><span>126 scenes shot</span><span>Teaser is out</span><span>Sound design started</span><span>Next: fine cut</span></div>
+      </div>
+    </div>
+
+    <section id="kaam">
+      <div class="sec-head"><h2>Work so far</h2><span class="mono">Update: 12 Oct 2026</span></div>
+      <div class="work" id="work">
+        <div>
+          <div class="big">
+            <div class="num"><span data-count="41">41</span><small>%</small></div>
+            <div class="mono">Of the whole movie is done</div>
+          </div>
+          <ul class="facts">
+            <li><b><span data-count="38">38</span> min</b><span>runtime locked (out of 95 min)</span></li>
+            <li><b><span data-count="126">126</span></b><span>scenes shot</span></li>
+            <li><b><span data-count="14">14</span> hrs</b><span>raw footage</span></li>
+            <li><b><span data-count="9">9</span></b><span>shoot days</span></li>
+          </ul>
+        </div>
+        <ul class="bars">
+          <li class="done"><span class="name">Shooting</span><span class="pct">90%</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="note">Only 2 scenes left.</span></li>
+          <li><span class="name">Editing</span><span class="pct">60%</span><span class="track"><span class="fill" style="width:60%"></span></span><span class="note">Reel 3 rough cut in progress.</span></li>
+          <li><span class="name">Sound</span><span class="pct">30%</span><span class="track"><span class="fill" style="width:30%"></span></span><span class="note">Dialogue clean-up has started.</span></li>
+          <li><span class="name">Color</span><span class="pct">15%</span><span class="track"><span class="fill" style="width:15%"></span></span></li>
+          <li><span class="name">VFX</span><span class="pct">10%</span><span class="track"><span class="fill" style="width:10%"></span></span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="reels">
+      <div class="sec-head"><h2>Reel status</h2><span class="mono">5 reels &middot; about 19 min each</span></div>
+      <div class="strip">
+        <div class="perf"></div>
+        <div class="frames">
+          <div class="frame"><span class="mono">Reel 1</span><div class="meter"><i style="height:100%"></i></div><small>Locked</small></div>
+          <div class="frame"><span class="mono">Reel 2</span><div class="meter"><i style="height:80%"></i></div><small>Fine cut</small></div>
+          <div class="frame"><span class="mono">Reel 3</span><div class="meter"><i style="height:45%"></i></div><small>Rough cut</small></div>
+          <div class="frame"><span class="mono">Reel 4</span><div class="meter"><i style="height:10%"></i></div><small>Assembly</small></div>
+          <div class="frame"><span class="mono">Reel 5</span><div class="meter"><i style="height:0%"></i></div><small>Shoot pending</small></div>
+        </div>
+        <div class="perf b"></div>
+      </div>
+    </section>
+
+    <section id="updates">
+      <div class="sec-head"><h2>Movie updates</h2><span class="mono">Newest first</span></div>
+      <ol class="log">
+        <li>
+          <span class="when">12 Oct 2026</span>
+          <div><span class="tag">Edit</span><h3>Reel 3 rough cut started</h3><p>The first 8 minutes are assembled. The order of the climax scenes is still to be decided.</p></div>
+        </li>
+        <li>
+          <span class="when">04 Oct 2026</span>
+          <div><span class="tag">Shoot</span><h3>Night shoot wrapped</h3><p>All the night scenes are done. Only 2 scenes remain.</p></div>
+        </li>
+        <li>
+          <span class="when">27 Sep 2026</span>
+          <div><span class="tag">Release</span><h3>Teaser uploaded</h3><p>The first teaser is 48 seconds long. You can watch it in the videos below.</p></div>
+        </li>
+        <li>
+          <span class="when">Next</span>
+          <div><span class="tag next">Upcoming</span><h3>Reel 3 fine cut</h3><p>Finish the rough cut by the end of this week, then start the fine cut.</p></div>
+        </li>
+      </ol>
+    </section>
+
+    <section id="videos">
+      <div class="sec-head"><h2>Videos</h2><span class="mono">6 videos</span></div>
+      <div class="shelf">
+        <article class="card"><div class="thumb t1"><span class="play"></span><span class="dur">0:48</span></div><span class="mono">Teaser</span><h3>Official Teaser</h3></article>
+        <article class="card"><div class="thumb t2"><span class="play"></span><span class="dur">3:12</span></div><span class="mono">Behind the scenes</span><h3>Shoot Day 5</h3></article>
+        <article class="card"><div class="thumb t3"><span class="play"></span><span class="dur">1:05</span></div><span class="mono">Edit</span><h3>Reel 2 Rough Cut</h3></article>
+        <article class="card"><div class="thumb t4"><span class="play"></span><span class="dur">2:30</span></div><span class="mono">Behind the scenes</span><h3>Night Shoot</h3></article>
+        <article class="card"><div class="thumb t5"><span class="play"></span><span class="dur">0:30</span></div><span class="mono">Promo</span><h3>First Look</h3></article>
+        <article class="card"><div class="thumb t6"><span class="play"></span><span class="dur">4:20</span></div><span class="mono">Making</span><h3>Sound Design Diary</h3></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="brand" style="font-size:20px">Just <b>Vidio</b></span>
+    <span class="mono">Update: 12 Oct 2026</span>
+  </footer>
+</div>
+
+<script>
+/* Opening intro: lamp swings in the dark, its beam sweeps across the title, then lights the whole screen */
+(function () {
+  var root = document.documentElement;
+  var intro = document.getElementById('intro');
+  if (!intro) return;
+  var rm = false;
+  try { rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  var cv = document.getElementById('introCanvas');
+  var ctx = cv && cv.getContext ? cv.getContext('2d') : null;
+  if (rm || !ctx) { intro.parentNode.removeChild(intro); return; }
+  root.classList.add('intro');
+
+  var done = false, raf = 0, W = 0, H = 0, dpr = 1, END = 5000;
+  function finish() {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    root.classList.remove('intro');
+    intro.classList.add('out');
+    setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 900);
+  }
+  document.getElementById('introSkip').addEventListener('click', function (e) { e.stopPropagation(); finish(); });
+  intro.addEventListener('click', finish);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') finish(); });
+
+  function size() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  /* x, y: lamp position (0-1), a: beam direction in degrees, w: beam half-angle,
+     s: lamp scale, o: lamp opacity, l: beam length (x screen height), f: darkness at far end of beam */
+  var K = [
+    { t: 0,    x: .5,  y: .5,  a: -90,  w: 0,  s: .55, o: 0, l: .55, f: .9 },
+    { t: 600,  x: .5,  y: .5,  a: -90,  w: 0,  s: 1,   o: 1, l: .55, f: .9 },
+    { t: 1100, x: .5,  y: .5,  a: -90,  w: 15, s: 1,   o: 1, l: .6,  f: .9 },
+    { t: 1800, x: .8,  y: .42, a: -160, w: 15, s: 1,   o: 1, l: .7,  f: .85 },
+    { t: 2500, x: .78, y: .62, a: -215, w: 15, s: 1,   o: 1, l: .8,  f: .85 },
+    { t: 3300, x: .5,  y: .1,  a: -270, w: 20, s: 1,   o: 1, l: .95, f: .8 },
+    { t: 4100, x: .5,  y: .07, a: -270, w: 52, s: 1,   o: 1, l: 1.6, f: .2 },
+    { t: 4600, x: .5,  y: .07, a: -270, w: 80, s: 1,   o: 1, l: 2.6, f: 0 }
+  ];
+  function ease(p) { return p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
+  function state(t) {
+    var last = K[K.length - 1];
+    if (t >= last.t) return last;
+    for (var i = 0; i < K.length - 1; i++) {
+      var a = K[i], b = K[i + 1];
+      if (t >= a.t && t < b.t) {
+        var p = ease((t - a.t) / (b.t - a.t)), o = {};
+        for (var k in a) { if (k !== 't') o[k] = a[k] + (b[k] - a[k]) * p; }
+        return o;
+      }
+    }
+    return K[0];
+  }
+
+  function cone(fx, fy, th, hw, L) {
+    var h = Math.min(hw, 1.48), D = L / Math.cos(h);
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(fx + Math.cos(th - h) * D, fy + Math.sin(th - h) * D);
+    ctx.lineTo(fx + Math.cos(th + h) * D, fy + Math.sin(th + h) * D);
+    ctx.closePath();
+  }
+
+  function poster() {
+    ctx.fillStyle = '#f2eee5';
+    ctx.fillRect(0, 0, W, H);
+    var fs = Math.min(W * .27, H * .2, 170);
+    var cy = H * .5 - fs * .1;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '900 ' + fs + 'px "Big Shoulders Display", Impact, "Arial Narrow", sans-serif';
+    ctx.fillStyle = '#15171d';
+    ctx.fillText('JUST', W / 2, cy);
+    ctx.fillStyle = '#b3720a';
+    ctx.fillText('VIDIO', W / 2, cy + fs * .92);
+    ctx.fillStyle = '#5f6470';
+    ctx.font = '500 ' + Math.max(10, Math.min(14, W * .03)) + 'px "JetBrains Mono", ui-monospace, monospace';
+    try { ctx.letterSpacing = '3px'; } catch (e) {}
+    ctx.fillText('MOVIE WORK AND UPDATES', W / 2, cy + fs * .92 + Math.max(28, fs * .3));
+    try { ctx.letterSpacing = '0px'; } catch (e) {}
+  }
+
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function lamp(px, py, th, s, o) {
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(th + Math.PI / 2);
+    ctx.scale(s, s);
+    ctx.globalAlpha = Math.max(0, Math.min(1, o));
+    ctx.shadowColor = 'rgba(233,180,76,.95)';
+    ctx.shadowBlur = 34;
+    var g = ctx.createLinearGradient(0, -20, 0, 20);
+    g.addColorStop(0, '#fffdf6');
+    g.addColorStop(1, '#e8e0cc');
+    ctx.fillStyle = g;
+    rrect(-29, -20, 58, 40, 9);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffd98a';
+    rrect(-21, -20, 42, 5, 2.5);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render(t) {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#0b0c11';
+    ctx.fillRect(0, 0, W, H);
+    var st = state(t);
+    var u = Math.max(.7, Math.min(1.2, Math.min(W, H) / 520));
+    var px = st.x * W, py = st.y * H;
+    var th = st.a * Math.PI / 180, hw = st.w * Math.PI / 180, L = st.l * H;
+    var fx = px + Math.cos(th) * 20 * st.s * u, fy = py + Math.sin(th) * 20 * st.s * u;
+    if (st.w > .5) {
+      cone(fx, fy, th, hw + .05, L);
+      ctx.fillStyle = 'rgba(255,235,190,.07)';
+      ctx.fill();
+      ctx.save();
+      cone(fx, fy, th, hw, L);
+      ctx.clip();
+      poster();
+      var g = ctx.createLinearGradient(fx, fy, fx + Math.cos(th) * L, fy + Math.sin(th) * L);
+      g.addColorStop(0, 'rgba(11,12,17,0)');
+      g.addColorStop(.35, 'rgba(11,12,17,' + (st.f * .15) + ')');
+      g.addColorStop(1, 'rgba(11,12,17,' + st.f + ')');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    var r = 150 * st.s * u;
+    var gl = ctx.createRadialGradient(px, py, 0, px, py, r);
+    gl.addColorStop(0, 'rgba(233,180,76,' + (.5 * st.o) + ')');
+    gl.addColorStop(1, 'rgba(233,180,76,0)');
+    ctx.fillStyle = gl;
+    ctx.fillRect(px - r, py - r, r * 2, r * 2);
+    ctx.globalCompositeOperation = 'source-over';
+    lamp(px, py, th, st.s * u, st.o);
+  }
+
+  function start() {
+    if (done) return;
+    size();
+    window.addEventListener('resize', size);
+    var t0 = performance.now();
+    (function frame(now) {
+      if (done) return;
+      var t = now - t0;
+      try { render(t); } catch (e) { finish(); return; }
+      if (t >= END) { finish(); return; }
+      raf = requestAnimationFrame(frame);
+    })(t0);
+  }
+  var fontsReady = (document.fonts && document.fonts.load)
+    ? Promise.race([document.fonts.load('900 100px "Big Shoulders Display"'), new Promise(function (r) { setTimeout(r, 1500); })])
+    : Promise.resolve();
+  fontsReady.then(start, start);
+})();
+</script>
+<script>
+(function () {
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  /* Video preview from the viewer's own device */
+  var input = document.getElementById('file');
+  var player = document.getElementById('player');
+  var screen = document.getElementById('screen');
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    try {
+      player.src = URL.createObjectURL(f);
+      player.hidden = false;
+      screen.classList.add('playing');
+      player.play().catch(function () {});
+    } catch (e) {}
+  });
+
+  if (reduce) return;
+
+  /* Running timecode at 24 fps */
+  var tc = document.getElementById('tc');
+  var t0 = performance.now();
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function loop(now) {
+    if (!screen.classList.contains('playing')) {
+      var frames = Math.floor((now - t0) / 1000 * 24);
+      var s = Math.floor(frames / 24);
+      tc.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60) + ':' + pad(frames % 24);
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  /* Count-up numbers when the work section comes into view */
+  var work = document.getElementById('work');
+  if (work && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        io.disconnect();
+        var nodes = work.querySelectorAll('[data-count]');
+        var start = performance.now();
+        var dur = 1400;
+        for (var i = 0; i < nodes.length; i++) nodes[i].textContent = '0';
+        (function step(now) {
+          var p = Math.min(1, (now - start) / dur);
+          var e = 1 - Math.pow(1 - p, 3);
+          for (var j = 0; j < nodes.length; j++) {
+            nodes[j].textContent = Math.round(parseInt(nodes[j].getAttribute('data-count'), 10) * e);
+          }
+          if (p < 1) requestAnimationFrame(step);
+        })(start);
+      });
+    }, { threshold: 0.25 });
+    io.observe(work);
+  }
+})();
+</script>
+</body>
+</html>
